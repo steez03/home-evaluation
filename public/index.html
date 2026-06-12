@@ -808,6 +808,7 @@ async function submitForm() {
       window._pendingEmail = email;
       window._pendingPhone = phone;
       window._pendingFname = fname;
+      window._pendingToken = codeResult.token; // signed token for verification
 
       await new Promise(r => setTimeout(r, 800));
       document.getElementById('loading-screen').style.display = 'none';
@@ -873,7 +874,7 @@ async function verifyCode() {
   try {
     const res = await fetch('/api/verify-code', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ email, code })
+      body: JSON.stringify({ email, code, token: window._pendingToken })
     });
     const result = await res.json();
     if (!result.success) {
@@ -947,6 +948,7 @@ async function resendCode() {
     });
     const result = await res.json();
     if (result.success) {
+      window._pendingToken = result.token; // update token for new code
       statusEl.textContent = '✓ New code sent!';
       const inputs = Array.from({ length: 6 }, (_, i) => document.getElementById('c' + i));
       inputs.forEach(i => { i.value = ''; i.classList.remove('filled','error'); });
