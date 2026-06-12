@@ -93,17 +93,17 @@ function clientReportEmail(data) {
       <p style="font-size:14px;color:#1B2A4A;line-height:1.9;margin:0;">${(v.keyDrivers || '').replace(/\n/g, '<br>')}</p>
     </td></tr>
 
-    <!-- Full assessment -->
+    <!-- How this was calculated -->
     <tr><td style="background:#FFFFFF;padding:0 36px 28px;border-top:1px solid #F0EDE6;">
-      <p style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#9A9590;margin:0 0 10px;font-weight:700;">Full Assessment</p>
+      <p style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#9A9590;margin:0 0 10px;font-weight:700;">How This Estimate Was Calculated</p>
       <p style="font-size:14px;color:#1B2A4A;line-height:1.9;margin:0;">${v.fullAssessment || ''}</p>
     </td></tr>
 
     <!-- CTA -->
     <tr><td style="background:#1B2A4A;padding:28px 36px;text-align:center;">
-      <p style="font-family:Georgia,serif;font-size:18px;font-weight:400;color:#FFFFFF;margin:0 0 8px;">Want a precise market analysis?</p>
-      <p style="font-size:13px;color:rgba(255,255,255,.5);margin:0 0 20px;">Bernard can run a full CMA with recent comparable sales for your property.</p>
-      <a href="tel:2897783078" style="display:inline-block;padding:13px 32px;background:linear-gradient(135deg,#F4DB8B,#7F5F39);color:#111D35;font-size:13px;font-weight:700;text-decoration:none;border-radius:8px;letter-spacing:1px;text-transform:uppercase;">Call 289-778-3078</a>
+      <p style="font-family:Georgia,serif;font-size:20px;font-weight:400;color:#FFFFFF;margin:0 0 8px;">Want to know what your home could actually sell for?</p>
+      <p style="font-size:13px;color:rgba(255,255,255,.5);margin:0 0 24px;line-height:1.7;">AI estimates are a great starting point, but every home has details that data alone cannot capture. Bernard Arzadon offers a free, no-obligation in-person home walkthrough for homeowners in the area.</p>
+      <a href="mailto:bernard@arzadonrealty.com?subject=I'd%20like%20a%20home%20valuation%20for%20${encodeURIComponent(data.address || 'my property')}&body=Hi%20Bernard%2C%0A%0AI%20just%20received%20my%20AI%20home%20valuation%20for%20${encodeURIComponent((data.address || 'my property') + (data.city ? ', ' + data.city : ''))}%20and%20I%20would%20like%20to%20get%20a%20more%20accurate%2C%20in-person%20assessment.%0A%0APlease%20get%20in%20touch%20at%20your%20earliest%20convenience.%0A%0AThanks%2C%0A${encodeURIComponent(data.fname || '')}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#F4DB8B,#7F5F39);color:#111D35;font-size:13px;font-weight:700;text-decoration:none;border-radius:8px;letter-spacing:1px;text-transform:uppercase;">Request a Free In-Person Walkthrough</a>
     </td></tr>
 
     <!-- Footer -->
