@@ -1,20 +1,25 @@
 // api/send-code.js
-// Generates a 6-digit code and emails it via SendGrid
+// Generates a 6-digit code, emails it via SendGrid,
+// and returns a signed HMAC token to the browser.
+// No shared server-side storage needed — works across serverless instances.
+//
 // Required environment variables:
 //   SENDGRID_API_KEY  — your SendGrid API key (SG.xxx)
 //   FROM_EMAIL        — verified sender email in SendGrid
+//   TOKEN_SECRET      — any long random string you make up (e.g. "arzadon-realty-2025-secret-xyz")
 
-const codeStore = {};
+const crypto = require('crypto');
 
 function generateCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-function cleanExpired() {
-  const now = Date.now();
-  for (const key of Object.keys(codeStore)) {
-    if (codeStore[key].expires < now) delete codeStore[key];
-  }
+function signToken(email, code, expires) {
+  const secret = process.env.TOKEN_SECRET || 'arzadon-realty-fallback-secret';
+  const payload = `${email.toLowerCase().trim()}:${code}:${expires}`;
+  const sig = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  // Encode payload + sig as base64 so it's safe to pass in JSON
+  return Buffer.from(JSON.stringify({ payload, sig })).toString('base64');
 }
 
 module.exports = async (req, res) => {
@@ -29,16 +34,9 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'Valid email required' });
   }
 
-  cleanExpired();
-
   const code = generateCode();
-  const key = email.toLowerCase().trim();
-
-  codeStore[key] = {
-    code,
-    expires: Date.now() + 10 * 60 * 1000,
-    attempts: 0
-  };
+  const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  const token = signToken(email, code, expires);
 
   try {
     const sgResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -105,7 +103,8 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Failed to send email. Please try again.' });
     }
 
-    return res.status(200).json({ success: true });
+    // Return the signed token to the browser — no server-side storage needed
+    return res.status(200).json({ success: true, token });
 
   } catch (err) {
     console.error('Send code error:', err);
