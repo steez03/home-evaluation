@@ -161,6 +161,8 @@ function bernardNotificationEmail(data) {
         <tr><td style="padding:5px 0;color:#5A5550;font-size:13px;">Basement</td><td style="padding:5px 0;font-size:13px;color:#1B2A4A;">${basement || 'None'}</td></tr>
         ${features ? `<tr><td style="padding:5px 0;color:#5A5550;font-size:13px;vertical-align:top;">Upgrades</td><td style="padding:5px 0;font-size:13px;color:#1B2A4A;">${features}</td></tr>` : ''}
         ${notes ? `<tr><td style="padding:5px 0;color:#5A5550;font-size:13px;vertical-align:top;">Notes</td><td style="padding:5px 0;font-size:13px;color:#1B2A4A;">${notes}</td></tr>` : ''}
+        <tr><td style="padding:5px 0;color:#5A5550;font-size:13px;">Email consent</td><td style="padding:5px 0;font-size:13px;font-weight:700;color:${data.consentEmail ? '#2E7D4F' : '#c0392b'};">${data.consentEmail ? 'Yes - agreed to email/text follow-up' : 'No'}</td></tr>
+        <tr><td style="padding:5px 0;color:#5A5550;font-size:13px;">Call consent</td><td style="padding:5px 0;font-size:13px;font-weight:700;color:${data.consentCall ? '#2E7D4F' : '#c0392b'};">${data.consentCall ? 'Yes - consented to calls (DNCL override)' : 'No'}</td></tr>
       </table>
     </td></tr>
 
@@ -196,7 +198,9 @@ async function addToFollowUpBoss(data) {
 Property: ${locationStr}
 Type: ${propType || 'Not specified'}
 AI Estimate: ${v.likelyValue || 'See report'} (range: ${v.lowValue || ''} to ${v.highValue || ''})
-${v.hpiBenchmark ? 'Data source: ' + v.hpiBenchmark : ''}`;
+${v.hpiBenchmark ? 'Data source: ' + v.hpiBenchmark : ''}
+Email/text consent: ${data.consentEmail ? 'YES - agreed to follow-up communications' : 'NO'}
+Phone call consent (DNCL override): ${data.consentCall ? 'YES - consented to calls' : 'NO'}`;
 
   const payload = {
     source: 'eval.arzadonrealty.com',
