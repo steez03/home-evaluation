@@ -1,12 +1,12 @@
 // api/send-code.js
 // Generates a 6-digit code, emails it via SendGrid,
 // and returns a signed HMAC token to the browser.
-// No shared server-side storage needed — works across serverless instances.
+// No shared server-side storage needed - works across serverless instances.
 //
 // Required environment variables:
-//   SENDGRID_API_KEY  — your SendGrid API key (SG.xxx)
-//   FROM_EMAIL        — verified sender email in SendGrid
-//   TOKEN_SECRET      — any long random string you make up (e.g. "arzadon-realty-2025-secret-xyz")
+//   SENDGRID_API_KEY  - your SendGrid API key (SG.xxx)
+//   FROM_EMAIL        - verified sender email in SendGrid
+//   TOKEN_SECRET      - any long random string you make up (e.g. "arzadon-realty-2025-secret-xyz")
 
 const crypto = require('crypto');
 
@@ -49,9 +49,9 @@ module.exports = async (req, res) => {
         personalizations: [{ to: [{ email }] }],
         from: {
           email: process.env.FROM_EMAIL || 'bernard@arzadonrealty.com',
-          name: 'Bernard Arzadon — Arzadon Realty'
+          name: 'Bernard Arzadon, Arzadon Realty'
         },
-        subject: `${code} — Your Arzadon Realty Verification Code`,
+        subject: `${code} - Your Arzadon Realty Verification Code`,
         content: [{
           type: 'text/html',
           value: `
@@ -103,7 +103,7 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Failed to send email. Please try again.' });
     }
 
-    // Return the signed token to the browser — no server-side storage needed
+    // Return the signed token to the browser - no server-side storage needed
     return res.status(200).json({ success: true, token });
 
   } catch (err) {
