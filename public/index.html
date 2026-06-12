@@ -383,7 +383,7 @@ footer{background:var(--white);border-top:1px solid var(--gray-200);padding:36px
         <div class="screen-sub">Approximate figures are fine</div>
       </div>
       <div class="screen-body">
-        <div class="field-grid cols-3">
+        <div class="field-grid cols-2">
           <div class="field-group">
             <label>Bedrooms</label>
             <select id="bedrooms">
@@ -392,10 +392,16 @@ footer{background:var(--white);border-top:1px solid var(--gray-200);padding:36px
             </select>
           </div>
           <div class="field-group">
-            <label>Bathrooms</label>
-            <select id="bathrooms">
-              <option>1</option><option selected>2</option><option>2.5</option>
-              <option>3</option><option>4</option><option>5+</option>
+            <label>Full Bathrooms</label>
+            <select id="bathrooms-full">
+              <option>1</option><option selected>2</option><option>3</option>
+              <option>4</option><option>5</option><option>6+</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Half Baths <span class="opt">(powder rooms)</span></label>
+            <select id="bathrooms-half">
+              <option selected>0</option><option>1</option><option>2</option><option>3</option>
             </select>
           </div>
           <div class="field-group">
@@ -408,8 +414,8 @@ footer{background:var(--white);border-top:1px solid var(--gray-200);padding:36px
         </div>
         <div class="field-grid cols-2" style="margin-top:16px">
           <div class="field-group">
-            <label>Square Footage <span class="opt">(above grade)</span></label>
-            <input type="number" id="sqft" placeholder="e.g. 1850">
+            <label>Above Grade Square Footage <span class="opt">(main floors only, not basement)</span></label>
+            <input type="number" id="sqft" placeholder="e.g. 1850 (main floors only)">
           </div>
           <div class="field-group">
             <label>Lot Size <span class="opt">(optional)</span></label>
@@ -694,7 +700,8 @@ function collectData() {
     propType: propTypeBtn ? propTypeBtn.textContent.trim().replace(/[\u{1F000}-\u{1FFFF}]/gu,'').trim() : '',
     yearBuilt: document.getElementById('year-built').value,
     bedrooms: document.getElementById('bedrooms').value,
-    bathrooms: document.getElementById('bathrooms').value,
+    bathroomsFull: document.getElementById('bathrooms-full').value,
+    bathroomsHalf: document.getElementById('bathrooms-half').value,
     parking: document.getElementById('parking').value,
     sqft: document.getElementById('sqft').value,
     lot: document.getElementById('lot').value,
@@ -841,7 +848,7 @@ SOURCE RULES -- STRICTLY FOLLOW:
 PROPERTY:
 Address: ${locationStr}
 Type: ${d.propType || 'Not specified'}, Year Built: ${d.yearBuilt || 'Unknown'}
-Bedrooms: ${d.bedrooms}, Bathrooms: ${d.bathrooms}, Parking: ${d.parking}
+Bedrooms: ${d.bedrooms}, Full Bathrooms: ${d.bathroomsFull}, Half Bathrooms (powder rooms): ${d.bathroomsHalf}, Parking: ${d.parking}
 Sq Ft: ${d.sqft ? d.sqft + ' above grade' : 'not provided'}, Lot: ${d.lot || 'not provided'}
 Basement: ${d.basement}
 Upgrades/Features: ${d.features || 'none noted'}
