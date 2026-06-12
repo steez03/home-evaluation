@@ -288,14 +288,14 @@ footer{background:var(--white);border-top:1px solid var(--gray-200);padding:36px
       <div class="logo-brokerage">eXp Realty, Brokerage</div>
     </div>
   </div>
-  <div class="header-right">Home Evaluation</div>
+  <div class="header-right">AI Home Evaluation</div>
 </header>
 
 <!-- HERO -->
 <div class="hero" id="hero-section">
   <div class="hero-tag">AI-Powered Market Analysis</div>
-  <h1>What Is Your Home<br><span class="gold">Worth Today?</span></h1>
-  <p>Get an instant, AI-generated valuation anchored to live MLS HPI data. Takes about 2 minutes.</p>
+  <h1>Your AI Home<br><span class="gold">Valuation Report</span></h1>
+  <p>Get an instant AI-generated valuation anchored to live MLS data. Takes about 2 minutes.</p>
   <div class="trust-row">
     <div class="trust-badge">Live MLS HPI Data</div>
     <div class="trust-badge">No obligation, ever</div>
@@ -572,12 +572,12 @@ footer{background:var(--white);border-top:1px solid var(--gray-200);padding:36px
     </div>
 
     <div class="hpi-banner" id="hpi-banner">
-      <div class="hpi-label">Live Data Source</div>
+      <div class="hpi-label">AI Data Source</div>
       <div class="hpi-text" id="res-hpi"></div>
     </div>
 
     <div class="value-card">
-      <div class="value-label">Most Likely Value</div>
+      <div class="value-label">AI Estimated Value</div>
       <div class="value-main"><span class="value-dollar">$</span><span id="res-likely-num"></span></span></div>
       <div class="value-range">Estimated range: <strong id="res-low">calculating...</strong> to <strong id="res-high"></strong></div>
       <div class="value-bar"><div class="value-bar-fill"></div><div class="value-bar-marker"></div></div>
@@ -589,15 +589,15 @@ footer{background:var(--white);border-top:1px solid var(--gray-200);padding:36px
     </div>
 
     <div class="report-grid">
-      <div class="report-card"><div class="report-card-label">Market Context</div><p id="res-market"></span></p></div>
-      <div class="report-card"><div class="report-card-label">Key Value Drivers</div><p id="res-drivers"></span></p></div>
+      <div class="report-card"><div class="report-card-label">Your Market Right Now</div><p id="res-market"></span></p></div>
+      <div class="report-card"><div class="report-card-label">What Works in Your Favour</div><p id="res-drivers"></span></p></div>
     </div>
 
-    <div class="report-full"><div class="report-full-label">Full Assessment</div><p id="res-full"></span></p></div>
+    <div class="report-full"><div class="report-full-label">How This Estimate Was Calculated</div><p id="res-full"></span></p></div>
 
     <div class="followup-card">
       <div>
-        <h3>Your full report is on the way</h3>
+        <h3>Your AI report is on the way</h3>
         <p>Check your inbox and phone shortly.</p>
       </div>
       <div class="followup-badges">
@@ -606,7 +606,7 @@ footer{background:var(--white);border-top:1px solid var(--gray-200);padding:36px
       </div>
     </div>
 
-    <p class="disclaimer"><strong>Disclaimer:</strong> This valuation is an AI-generated estimate anchored to live MLS HPI benchmark data from the Cornerstone Association of REALTORS (Hamilton-Burlington) via creastats.crea.ca, combined with self-reported property information. MLS HPI data is the property of The Canadian Real Estate Association. This is not a formal appraisal and should not be used for financing, legal, or tax purposes. For a precise Comparative Market Analysis, contact Bernard Arzadon directly.</p>
+    <p class="disclaimer"><strong>Important:</strong> This is an AI-generated estimate based on publicly available market data and the property details you provided. It is not a formal appraisal and should not be used for financing, legal, or tax purposes. Market conditions change and individual property factors may affect actual value.</p>
   </div>
 
 </main>
@@ -716,101 +716,187 @@ function collectData() {
 }
 
 // ── BUILD PROMPT ──
+
+// Markets Bernard actively serves -- these get precise, source-controlled valuations
+function getMarketConfig(cityVal) {
+  const c = cityVal.toLowerCase().trim();
+
+  // Trusted data sources only -- never cite real estate brokerages (RE/MAX, Royal LePage,
+  // Century 21, Keller Williams, Urban Group, Sutton, etc.) as data sources.
+  // Approved sources: TRREB, Cornerstone/RAHB, OREB, NIAR, WOWA, Zolo, Zoocasa (stats pages only),
+  // CREA/creastats.crea.ca, CMHC, Statistics Canada, local board press releases.
+
+  if (c.includes('burlington')) return {
+    type: 'primary',
+    board: 'Cornerstone Association of REALTORS (Hamilton-Burlington)',
+    boardSearch: 'creastats.crea.ca/board/hami Burlington detached average sold 2026',
+    neighbourhoodSearch: '[NEIGHBOURHOOD] Burlington Ontario average sold price 2026 site:zolo.ca OR site:wowa.ca OR site:zoocasa.com',
+    warning: 'CRITICAL: Do NOT use the board composite (~$737K) for Burlington. It blends Hamilton and Burlington. Burlington detached homes trade 30-50% above the composite. Search for Burlington-specific and neighbourhood-specific data.',
+    anchors: `Burlington neighbourhood price tiers (fallback anchors):
+- PREMIUM: Roseland, Shoreacres, Elizabeth Gardens, lakefront detached $1.3M to $2.5M+
+- UPPER-MID: Alton Village, Millcroft, Orchard, Tyandaga, Palmer detached $1.0M to $1.5M
+- MID: Headon Forest, Brant Hills, LaSalle, Freeman detached $900K to $1.2M
+- ENTRY: Appleby, Tansley, central condos $600K to $950K`
+  };
+
+  if (c.includes('oakville')) return {
+    type: 'primary',
+    board: 'Oakville-Milton Real Estate Board (OMREB)',
+    boardSearch: 'creastats.crea.ca/board/oakv Oakville detached average sold 2026',
+    neighbourhoodSearch: '[NEIGHBOURHOOD] Oakville Ontario average sold price 2026 site:zolo.ca OR site:wowa.ca',
+    warning: 'Oakville is a premium GTA West market. Do not blend with Milton data.',
+    anchors: `Oakville neighbourhood tiers:
+- PREMIUM: Old Oakville, Bronte, Morrison, southeast Oakville detached $2M to $4M+
+- UPPER-MID: Joshua Creek, River Oaks, Eastlake detached $1.5M to $2.5M
+- MID: Glen Abbey, West Oak Trails, College Park detached $1.2M to $1.8M
+- ENTRY: North Oakville newer subdivisions $950K to $1.4M`
+  };
+
+  if (c.includes('milton')) return {
+    type: 'primary',
+    board: 'Oakville-Milton Real Estate Board (OMREB)',
+    boardSearch: 'creastats.crea.ca/board/oakv Milton detached average sold 2026',
+    neighbourhoodSearch: '[NEIGHBOURHOOD] Milton Ontario average sold price 2026 site:zolo.ca OR site:wowa.ca',
+    warning: 'Milton is more affordable than Oakville. Search Milton-specific data only.',
+    anchors: `Milton neighbourhood tiers:
+- Newer subdivisions (Scott, Cobban, Hawthorne, Ford): detached $850K to $1.2M
+- Established (Clarke, Old Milton): detached $900K to $1.3M`
+  };
+
+  if (c.includes('hamilton') || ['ancaster','dundas','stoney creek','waterdown','binbrook','flamborough'].includes(c)) return {
+    type: 'primary',
+    board: 'Cornerstone Association of REALTORS (Hamilton-Burlington)',
+    boardSearch: 'creastats.crea.ca/board/hami Hamilton detached average sold 2026',
+    neighbourhoodSearch: '[NEIGHBOURHOOD] Hamilton Ontario average sold price 2026 site:zolo.ca OR site:wowa.ca',
+    warning: 'Hamilton is significantly more affordable than Burlington. Do NOT use Burlington prices. Search Hamilton-specific data.',
+    anchors: `Hamilton neighbourhood tiers:
+- PREMIUM: Ancaster, Dundas, Westdale, Flamborough detached $750K to $1.1M
+- UPPER-MID: Stoney Creek lakefront, Binbrook, Waterdown detached $650K to $900K
+- MID: Mountain area, Rosedale, Crown Point detached $550K to $750K
+- ENTRY: Central, north, east Hamilton detached $400K to $620K`
+  };
+
+  if (c.includes('mississauga') || c.includes('brampton') || c.includes('etobicoke') || c.includes('toronto') || c.includes('scarborough') || c.includes('north york')) return {
+    type: 'primary',
+    board: 'Toronto Regional Real Estate Board (TRREB)',
+    boardSearch: 'TRREB WOWA.ca ' + cityVal + ' detached average sold price 2026 by district',
+    neighbourhoodSearch: '[NEIGHBOURHOOD] ' + cityVal + ' average sold price 2026 site:zolo.ca OR site:wowa.ca OR site:zoocasa.com',
+    warning: 'Use TRREB district-level data. For Etobicoke use W-districts, Mississauga use Z-districts. Neighbourhood averages from Zolo/WOWA are preferred over city-wide averages because neighbourhood mix varies significantly.',
+    anchors: 'Use TRREB district data as anchor. Adjust for neighbourhood-level sold comps found via Zolo/WOWA.'
+  };
+
+  if (c.includes('grimsby') || c.includes('st. catharines') || c.includes('niagara') || c.includes('welland') || c.includes('fort erie') || c.includes('thorold') || c.includes('lincoln')) return {
+    type: 'primary',
+    board: 'Niagara Association of REALTORS (NIAR)',
+    boardSearch: 'creastats.crea.ca/board/niar ' + cityVal + ' detached average sold 2026',
+    neighbourhoodSearch: cityVal + ' Ontario real estate average sold price 2026 site:zolo.ca OR site:wowa.ca',
+    warning: 'Niagara region. Use NIAR board data. Prices are meaningfully lower than Hamilton and Burlington.',
+    anchors: 'Niagara detached homes broadly range $500K to $900K depending on location and proximity to Lake Ontario.'
+  };
+
+  if (c.includes('brantford') || c.includes('brant')) return {
+    type: 'primary',
+    board: 'Brantford Regional Real Estate Board',
+    boardSearch: 'Brantford Ontario real estate average sold price 2026 WOWA',
+    neighbourhoodSearch: '[NEIGHBOURHOOD] Brantford Ontario average sold price 2026 site:zolo.ca OR site:wowa.ca',
+    warning: 'Brantford is a distinct market from GTA. Use Brantford-specific data only.',
+    anchors: 'Brantford detached homes broadly range $500K to $750K. Newer subdivisions on the east side command premiums over older central stock.'
+  };
+
+  if (c.includes('london')) return {
+    type: 'primary',
+    board: 'London and St. Thomas Association of REALTORS (LSTAR)',
+    boardSearch: 'LSTAR London Ontario detached average sold price 2026 WOWA creastats',
+    neighbourhoodSearch: '[NEIGHBOURHOOD] London Ontario average sold price 2026 site:zolo.ca OR site:wowa.ca',
+    warning: 'London Ontario market. Use LSTAR data. Do not confuse with London UK.',
+    anchors: 'London Ontario detached homes broadly range $550K to $900K. North London (Masonville, Medway) commands premiums. East and central London are more affordable.'
+  };
+
+  // Outside primary service area -- best effort, no accuracy guarantee
+  return {
+    type: 'outside',
+    board: 'Local Ontario real estate board',
+    boardSearch: cityVal + ' Ontario real estate average sold price 2026 WOWA creastats.crea.ca',
+    neighbourhoodSearch: cityVal + ' Ontario neighbourhood real estate 2026 site:zolo.ca OR site:wowa.ca',
+    warning: 'Outside primary service area. Use best available public data sources.',
+    anchors: 'Use whatever market data is available from WOWA, Zolo, or creastats.crea.ca for this city.'
+  };
+}
+
 function buildPrompt(d) {
   const rStr = Object.entries(d.ratings).map(([k,v]) => `${k}: ${v ? v+'/5' : 'not rated'}`).join(', ');
   const cityVal = (d.city || 'Burlington').trim();
   const addressVal = (d.address || '').trim();
   const postalVal = (d.postalCode || '').trim();
   const locationStr = [addressVal, cityVal, postalVal, 'Ontario'].filter(Boolean).join(', ');
+  const mkt = getMarketConfig(cityVal);
 
-  const isBurlington = cityVal.toLowerCase().includes('burlington');
-  const isHamilton = cityVal.toLowerCase().includes('hamilton') ||
-    ['ancaster','dundas','stoney creek'].includes(cityVal.toLowerCase());
+  return `You are Bernard Arzadon, a real estate advisor at eXp Realty in Ontario. Generate a home valuation for the property below.
 
-  return `You are Bernard Arzadon, a senior real estate advisor at eXp Realty specializing in Burlington and the Hamilton-Burlington region of Ontario.
+SOURCE RULES -- STRICTLY FOLLOW:
+- APPROVED data sources: TRREB, Cornerstone/RAHB board stats, OMREB, OREB, NIAR, LSTAR, WOWA (wowa.ca), Zolo (zolo.ca), Zoocasa statistics pages, CREA (creastats.crea.ca), CMHC
+- BANNED sources: Never cite any real estate brokerage as a data source. This includes RE/MAX, Royal LePage, Century 21, Keller Williams, Urban Group, Sutton, Coldwell Banker, Sotheby's, or any other brokerage. These are competitors and their branded market reports must not appear in the valuation.
+- If a search result comes from a brokerage website, use the underlying data figure but do not name the brokerage as the source. Attribute to the board or MLS instead.
 
-PROPERTY SUBMITTED FOR VALUATION:
+PROPERTY:
 Address: ${locationStr}
 Type: ${d.propType || 'Not specified'}, Year Built: ${d.yearBuilt || 'Unknown'}
 Bedrooms: ${d.bedrooms}, Bathrooms: ${d.bathrooms}, Parking: ${d.parking}
-Square Footage: ${d.sqft ? d.sqft + ' sq ft above grade' : 'not provided'}, Lot: ${d.lot || 'not provided'}
+Sq Ft: ${d.sqft ? d.sqft + ' above grade' : 'not provided'}, Lot: ${d.lot || 'not provided'}
 Basement: ${d.basement}
-Recent upgrades and features: ${d.features || 'none noted'}
-Condition ratings (1 to 5 stars): ${rStr}
+Upgrades/Features: ${d.features || 'none noted'}
+Condition (1 to 5 stars): ${rStr}
 Notes: ${d.notes || 'none'}
 
-${isBurlington ? `
-YOU ARE VALUING A BURLINGTON, ONTARIO PROPERTY. FOLLOW THESE STEPS EXACTLY:
+MARKET: ${cityVal} | Board: ${mkt.board}
+${mkt.warning}
 
-STEP 1 - CONFIRM THE NEIGHBOURHOOD FROM THE STREET ADDRESS:
-Search: "${addressVal} Burlington Ontario neighbourhood"
-Also search: "${addressVal} Burlington ON real estate"
-Use the search results to confirm the EXACT neighbourhood name for this street. Do NOT guess from the postal code alone - postal code ${postalVal} covers multiple Burlington neighbourhoods. The search will confirm which one.
-
-STEP 2 - FIND NEIGHBOURHOOD-LEVEL SOLD DATA FOR BURLINGTON:
-Now that you know the confirmed neighbourhood, search for recent sold prices in THAT SPECIFIC NEIGHBOURHOOD:
-Search: "[confirmed neighbourhood] Burlington Ontario homes sold 2026 average price"
-Search: "Burlington [confirmed neighbourhood] real estate market 2026 detached sold"
-Search: "Burlington Ontario detached average sold price 2026 by neighbourhood"
-
-IMPORTANT: Do NOT use the Hamilton-Burlington board composite ($737K) as your anchor. That number blends Hamilton and Burlington together and is meaningless for Burlington valuations. Burlington detached homes trade 30-50% above the board composite.
-
-Burlington neighbourhood price anchors (use these if search returns limited data):
-- PREMIUM tier - Roseland, Shoreacres, Elizabeth Gardens, lakefront: detached $1.3M to $2.5M+
-- UPPER-MID tier - Alton Village, Millcroft, Orchard, Tyandaga, Palmer: detached $1.0M to $1.5M
-- MID tier - Headon Forest, Brant Hills, LaSalle, Freeman: detached $900K to $1.2M
-- ENTRY tier - Appleby, Tansley, central condos: $600K to $950K
-
-STEP 3 - GENERATE THE VALUATION:
-Anchor to the neighbourhood-level sold data or tier you confirmed above. Then adjust for:
-- Size vs typical benchmark (HPI benchmark home is approx 1,800 to 2,000 sq ft for detached)
-- Condition ratings (kitchen 5/5 is a meaningful premium, bathrooms 3/5 is a slight discount)
-- Specific lot features, basement finish, and parking
-- Current market conditions (Burlington detached inventory at 3-4 months, balanced to soft market)
-
-` : isHamilton ? `
-YOU ARE VALUING A HAMILTON AREA PROPERTY. FOLLOW THESE STEPS:
-
-STEP 1 - CONFIRM THE NEIGHBOURHOOD:
+STEP 1 - CONFIRM NEIGHBOURHOOD FROM STREET ADDRESS:
 Search: "${addressVal} ${cityVal} Ontario neighbourhood"
-Confirm the exact neighbourhood from the street address.
+Also search: "${addressVal} ${cityVal} ON real estate listing"
+Confirm the exact neighbourhood name from search results. Do not guess from postal code alone.
 
-STEP 2 - FIND HAMILTON NEIGHBOURHOOD SOLD DATA:
-Search: "${cityVal} Ontario housing market 2026 detached average sold price"
-Search: "[confirmed neighbourhood] Hamilton Ontario real estate sold 2026"
-Hamilton neighbourhood price anchors:
-- Premium (Ancaster, Dundas, Westdale, Flamborough): $750K to $1.1M
-- Upper-mid (Stoney Creek lakefront, Binbrook, Waterdown): $650K to $900K
-- Mid (Crown Point, Rosedale, Mountain area): $550K to $750K
-- Entry (central, north, east Hamilton): $400K to $620K
+STEP 2 - FIND SOLD DATA (use approved sources only):
+Primary board search: "${mkt.boardSearch}"
+Neighbourhood search (replace [NEIGHBOURHOOD] with confirmed name): "${mkt.neighbourhoodSearch}"
+Goal: find the most recent average or median sold price for this property type in this specific neighbourhood or city. Prefer neighbourhood-level data over city-wide averages.
 
-STEP 3 - GENERATE THE VALUATION anchored to Hamilton-specific data only.
+FALLBACK ANCHORS (use only if search returns no useful data):
+${mkt.anchors}
 
-` : `
-YOU ARE VALUING A PROPERTY IN ${cityVal.toUpperCase()}, ONTARIO. FOLLOW THESE STEPS:
+STEP 3 - GENERATE VALUATION AND WRITE CLIENT-FACING COPY:
+Anchor to the neighbourhood/city sold data found. Adjust for:
+- Size premium or discount vs typical benchmark (~1,800 to 2,000 sq ft for detached)
+- Condition ratings
+- Basement finish, parking, lot size
+- Current market conditions (days on market, sale-to-list ratio, inventory months)
+- Year built and any deferred maintenance implied by condition ratings
 
-STEP 1 - CONFIRM THE NEIGHBOURHOOD:
-Search: "${addressVal} ${cityVal} Ontario neighbourhood"
+TONE AND VOICE RULES -- CRITICAL:
+You are writing for a homeowner who is reading this report for the first time. They care deeply about their home. Write with warmth, optimism, and professionalism. Imagine you are sitting across the table from them.
 
-STEP 2 - FIND LOCAL MARKET DATA:
-Search: "${cityVal} Ontario real estate market 2026 detached average sold price"
-Search: "${cityVal} Ontario housing benchmark 2026"
-Board routing: Toronto/GTA = TRREB; Ottawa = OREB; Niagara = NIAR; Barrie = BDAR; Kitchener/Waterloo = KWAR; London = LSTAR; other = search for local board.
+- Always lead with what is working well about the property before mentioning anything that affects value negatively
+- Never use words like "dated", "headwind", "deferred maintenance", "below average", or "discount applies" -- these feel harsh and clinical
+- Reframe negatives as opportunities: instead of "bathrooms rated 3/5 represent a buyer negotiation point" say "there is an opportunity to add value with bathroom updates before listing -- a conversation worth having"
+- Never say a home "needs work" -- say it "has room to shine with some personalization"
+- Condition ratings below 3/5 should be acknowledged gently as "areas with some updating potential" not as deficiencies
+- Avoid jargon like "SNLR", "sale-to-list ratio", "inventory months" -- translate these into plain English ("homes in this area are typically selling within a few weeks of listing")
+- The market context should feel like local insider knowledge, not a market report
+- The full assessment should end on an encouraging, forward-looking note that naturally invites a conversation with Bernard
+- Never make the homeowner feel bad about their property -- your job is to open a door, not close one
+- Use "your home" and "your property" to make it personal
 
-STEP 3 - GENERATE THE VALUATION anchored to ${cityVal}-specific data.
-
-`}
-Respond ONLY with valid JSON, no markdown, no preamble, nothing outside the JSON:
+Respond ONLY with valid JSON, no markdown, no preamble:
 {
   "likelyValue": "$X,XXX,000",
   "lowValue": "$X,XXX,000",
   "highValue": "$X,XXX,000",
   "likelyNum": "X,XXX,000",
-  "confirmedNeighbourhood": "The exact neighbourhood name confirmed from searching the street address",
-  "hpiBenchmark": "Data source and figure actually used as anchor (neighbourhood-level if available, city-level if not): $XXX,000 - source, Month Year",
-  "marketContext": "2 to 3 sentences referencing the confirmed neighbourhood and actual sold prices found, not the board composite.",
-  "keyDrivers": "3 to 4 specific value drivers for this property, one per line with a dash prefix.",
-  "fullAssessment": "3 to 4 sentences: state the confirmed neighbourhood, the data anchor used, the adjustments made, and the final estimate rationale."
+  "confirmedNeighbourhood": "Exact neighbourhood confirmed from street address search",
+  "hpiBenchmark": "Source (board/WOWA/Zolo/CMHC only -- no brokerages): $XXX,000, Month Year",
+  "marketContext": "2 to 3 sentences written like a knowledgeable local friend explaining the market -- warm, plain English, specific figures from approved sources. No jargon. Make the homeowner feel informed and optimistic.",
+  "keyDrivers": "3 to 4 value drivers written positively. Lead each point with what is working in the homeowner's favour. If a condition rating is low, frame it as an opportunity rather than a problem. One per line with a dash prefix.",
+  "fullAssessment": "3 to 4 sentences. This field appears under the heading How This Estimate Was Calculated -- be transparent that this is an AI-generated estimate based on live market data and the details provided. Open by affirming something genuine about the property or its location. Explain the key factors the AI weighed in plain, friendly language. Close with a curiosity-driven, low-pressure invitation that feels helpful rather than salesy -- something like: AI estimates are a great starting point, but every home has details that data alone cannot capture. Curious what yours could actually sell for? Bernard Arzadon offers a free, no-obligation home walkthrough for homeowners in the area. Do NOT say Bernard will contact them or follow up. Do NOT say call me or reach out. Frame it as something available to them if they are curious, not as a sales pitch."
 }`;
 }
 
