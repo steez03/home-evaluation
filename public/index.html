@@ -69,6 +69,22 @@ label{font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:var(--te
 label .req{color:var(--gold);}
 label .opt{font-size:10px;color:var(--gray-400);text-transform:none;letter-spacing:0;font-weight:400;margin-left:4px;}
 
+/* CONSENT CHECKBOXES */
+.consent-section{padding:20px 36px 0;}
+.consent-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--gray-100);}
+.consent-item:last-child{border-bottom:none;}
+.consent-check{
+  width:20px;height:20px;min-width:20px;border:2px solid var(--gray-200);border-radius:4px;
+  cursor:pointer;appearance:none;-webkit-appearance:none;background:var(--off-white);
+  transition:all .18s;margin-top:1px;position:relative;
+}
+.consent-check:checked{background:var(--navy);border-color:var(--navy);}
+.consent-check:checked::after{content:'';position:absolute;left:5px;top:2px;width:6px;height:10px;border:2px solid white;border-top:none;border-left:none;transform:rotate(45deg);}
+.consent-check:focus{outline:2px solid var(--gold);outline-offset:2px;}
+.consent-text{font-size:13px;color:var(--text-secondary);line-height:1.6;cursor:pointer;}
+.consent-text strong{color:var(--text-primary);}
+.consent-required-note{font-size:11px;color:var(--gray-400);margin-top:3px;}
+
 input[type=text],input[type=email],input[type=tel],input[type=number],select,textarea{
   width:100%;padding:14px 16px;border:2px solid var(--gray-200);background:var(--off-white);
   font-family:'Nunito Sans',sans-serif;font-size:15px;color:var(--text-primary);outline:none;
@@ -485,6 +501,19 @@ footer{background:var(--white);border-top:1px solid var(--gray-200);padding:36px
           <textarea id="notes" placeholder="e.g. Tenanted property, planning to list in spring, estate situation..."></textarea>
         </div>
       </div>
+      <!-- CONSENT CHECKBOX -->
+      <div class="consent-section">
+        <div class="consent-item">
+          <input type="checkbox" class="consent-check" id="consent-email" name="consent-email">
+          <div>
+            <label class="consent-text" for="consent-email">
+              By checking this box I agree to the <a href="/terms" target="_blank" style="color:var(--gold-light);font-weight:700;text-decoration:underline;">Terms and Consent</a> and consent to being contacted by Bernard Arzadon, Arzadon Realty by email, text, and phone to receive my valuation report and related real estate communications, including if my number is on the National Do Not Call List. I may withdraw consent at any time.
+            </label>
+            <div class="consent-required-note">Required to unlock your report</div>
+          </div>
+        </div>
+      </div>
+
       <div style="padding:20px 36px 28px">
         <div class="nav-row" style="margin-top:0">
           <button class="btn-back" onclick="goTo(4)">Back</button>
@@ -593,7 +622,7 @@ footer{background:var(--white);border-top:1px solid var(--gray-200);padding:36px
 </footer>
 
 <!-- Google Places API - replace YOUR_GOOGLE_PLACES_KEY with your actual key -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBKULxXSx58j-KWPf2WKSgq4pbxJDh2gnY&libraries=places&callback=initPlaces" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_PLACES_KEY&libraries=places&callback=initPlaces" async defer></script>
 
 <script>
 // ── PROGRESS BAR ──
@@ -680,7 +709,9 @@ function collectData() {
     lname: document.getElementById('lname').value,
     email: document.getElementById('email').value,
     phone: document.getElementById('phone').value,
-    notes: document.getElementById('notes').value
+    notes: document.getElementById('notes').value,
+    consentEmail: document.getElementById('consent-email').checked,
+    consentCall: true // covered by combined consent checkbox
   };
 }
 
@@ -688,21 +719,18 @@ function collectData() {
 function buildPrompt(d) {
   const rStr = Object.entries(d.ratings).map(([k,v]) => `${k}: ${v ? v+'/5' : 'not rated'}`).join(', ');
   const cityVal = (d.city || 'Burlington').trim();
-  const locationStr = [d.address, d.city, d.postalCode, 'Ontario, Canada'].filter(Boolean).join(', ');
+  const addressVal = (d.address || '').trim();
+  const postalVal = (d.postalCode || '').trim();
+  const locationStr = [addressVal, cityVal, postalVal, 'Ontario'].filter(Boolean).join(', ');
 
-  return `You are Bernard Arzadon, a senior real estate advisor at eXp Realty, licensed in Ontario. A homeowner has submitted their property for an AI-powered valuation.
+  const isBurlington = cityVal.toLowerCase().includes('burlington');
+  const isHamilton = cityVal.toLowerCase().includes('hamilton') ||
+    ['ancaster','dundas','stoney creek'].includes(cityVal.toLowerCase());
 
-STEP 1: Search for live MLS HPI data specific to ${cityVal}, Ontario:
-Search: "${cityVal} Ontario MLS HPI benchmark price 2026 CREA real estate board"
-Also search: "creastats.crea.ca ${cityVal} Ontario housing market 2026"
-Board routing guide: Burlington/Hamilton/Ancaster/Dundas/Stoney Creek/Grimsby = Cornerstone (Hamilton-Burlington); Toronto/GTA = TRREB; Ottawa = OREB; Niagara = NIAR; Barrie = BDAR; Kitchener/Waterloo = KWAR; London = LSTAR; other Ontario = search for local board.
-Extract: benchmark price for matching property type, month-over-month change, year-over-year change, data date.
+  return `You are Bernard Arzadon, a senior real estate advisor at eXp Realty specializing in Burlington and the Hamilton-Burlington region of Ontario.
 
-STEP 2: Apply neighbourhood-level context for ${cityVal}${d.postalCode ? ' (' + d.postalCode + ')' : ''}:
-Use the postal code and address to identify the specific neighbourhood. Apply any premium or discount vs the city benchmark based on that neighbourhood's typical price position. Consider transit, waterfront, schools, escarpment proximity.
-
-STEP 3: Generate the valuation:
-Property: ${locationStr}
+PROPERTY SUBMITTED FOR VALUATION:
+Address: ${locationStr}
 Type: ${d.propType || 'Not specified'}, Year Built: ${d.yearBuilt || 'Unknown'}
 Bedrooms: ${d.bedrooms}, Bathrooms: ${d.bathrooms}, Parking: ${d.parking}
 Square Footage: ${d.sqft ? d.sqft + ' sq ft above grade' : 'not provided'}, Lot: ${d.lot || 'not provided'}
@@ -711,16 +739,78 @@ Recent upgrades and features: ${d.features || 'none noted'}
 Condition ratings (1 to 5 stars): ${rStr}
 Notes: ${d.notes || 'none'}
 
-Respond ONLY with valid JSON, no markdown, no preamble:
+${isBurlington ? `
+YOU ARE VALUING A BURLINGTON, ONTARIO PROPERTY. FOLLOW THESE STEPS EXACTLY:
+
+STEP 1 - CONFIRM THE NEIGHBOURHOOD FROM THE STREET ADDRESS:
+Search: "${addressVal} Burlington Ontario neighbourhood"
+Also search: "${addressVal} Burlington ON real estate"
+Use the search results to confirm the EXACT neighbourhood name for this street. Do NOT guess from the postal code alone - postal code ${postalVal} covers multiple Burlington neighbourhoods. The search will confirm which one.
+
+STEP 2 - FIND NEIGHBOURHOOD-LEVEL SOLD DATA FOR BURLINGTON:
+Now that you know the confirmed neighbourhood, search for recent sold prices in THAT SPECIFIC NEIGHBOURHOOD:
+Search: "[confirmed neighbourhood] Burlington Ontario homes sold 2026 average price"
+Search: "Burlington [confirmed neighbourhood] real estate market 2026 detached sold"
+Search: "Burlington Ontario detached average sold price 2026 by neighbourhood"
+
+IMPORTANT: Do NOT use the Hamilton-Burlington board composite ($737K) as your anchor. That number blends Hamilton and Burlington together and is meaningless for Burlington valuations. Burlington detached homes trade 30-50% above the board composite.
+
+Burlington neighbourhood price anchors (use these if search returns limited data):
+- PREMIUM tier - Roseland, Shoreacres, Elizabeth Gardens, lakefront: detached $1.3M to $2.5M+
+- UPPER-MID tier - Alton Village, Millcroft, Orchard, Tyandaga, Palmer: detached $1.0M to $1.5M
+- MID tier - Headon Forest, Brant Hills, LaSalle, Freeman: detached $900K to $1.2M
+- ENTRY tier - Appleby, Tansley, central condos: $600K to $950K
+
+STEP 3 - GENERATE THE VALUATION:
+Anchor to the neighbourhood-level sold data or tier you confirmed above. Then adjust for:
+- Size vs typical benchmark (HPI benchmark home is approx 1,800 to 2,000 sq ft for detached)
+- Condition ratings (kitchen 5/5 is a meaningful premium, bathrooms 3/5 is a slight discount)
+- Specific lot features, basement finish, and parking
+- Current market conditions (Burlington detached inventory at 3-4 months, balanced to soft market)
+
+` : isHamilton ? `
+YOU ARE VALUING A HAMILTON AREA PROPERTY. FOLLOW THESE STEPS:
+
+STEP 1 - CONFIRM THE NEIGHBOURHOOD:
+Search: "${addressVal} ${cityVal} Ontario neighbourhood"
+Confirm the exact neighbourhood from the street address.
+
+STEP 2 - FIND HAMILTON NEIGHBOURHOOD SOLD DATA:
+Search: "${cityVal} Ontario housing market 2026 detached average sold price"
+Search: "[confirmed neighbourhood] Hamilton Ontario real estate sold 2026"
+Hamilton neighbourhood price anchors:
+- Premium (Ancaster, Dundas, Westdale, Flamborough): $750K to $1.1M
+- Upper-mid (Stoney Creek lakefront, Binbrook, Waterdown): $650K to $900K
+- Mid (Crown Point, Rosedale, Mountain area): $550K to $750K
+- Entry (central, north, east Hamilton): $400K to $620K
+
+STEP 3 - GENERATE THE VALUATION anchored to Hamilton-specific data only.
+
+` : `
+YOU ARE VALUING A PROPERTY IN ${cityVal.toUpperCase()}, ONTARIO. FOLLOW THESE STEPS:
+
+STEP 1 - CONFIRM THE NEIGHBOURHOOD:
+Search: "${addressVal} ${cityVal} Ontario neighbourhood"
+
+STEP 2 - FIND LOCAL MARKET DATA:
+Search: "${cityVal} Ontario real estate market 2026 detached average sold price"
+Search: "${cityVal} Ontario housing benchmark 2026"
+Board routing: Toronto/GTA = TRREB; Ottawa = OREB; Niagara = NIAR; Barrie = BDAR; Kitchener/Waterloo = KWAR; London = LSTAR; other = search for local board.
+
+STEP 3 - GENERATE THE VALUATION anchored to ${cityVal}-specific data.
+
+`}
+Respond ONLY with valid JSON, no markdown, no preamble, nothing outside the JSON:
 {
   "likelyValue": "$X,XXX,000",
   "lowValue": "$X,XXX,000",
   "highValue": "$X,XXX,000",
   "likelyNum": "X,XXX,000",
-  "hpiBenchmark": "Board name, property type benchmark: $XXX,000 (X% MoM, X% YoY) - creastats.crea.ca, Month Year",
-  "marketContext": "2 to 3 sentences with actual live HPI figures for ${cityVal}, current trend, and what it means for this property type right now.",
-  "keyDrivers": "3 to 4 specific value drivers, one per line with a dash prefix.",
-  "fullAssessment": "3 to 4 sentences explaining how the live benchmark was adjusted for neighbourhood, condition, size, and features to arrive at the final estimate."
+  "confirmedNeighbourhood": "The exact neighbourhood name confirmed from searching the street address",
+  "hpiBenchmark": "Data source and figure actually used as anchor (neighbourhood-level if available, city-level if not): $XXX,000 - source, Month Year",
+  "marketContext": "2 to 3 sentences referencing the confirmed neighbourhood and actual sold prices found, not the board composite.",
+  "keyDrivers": "3 to 4 specific value drivers for this property, one per line with a dash prefix.",
+  "fullAssessment": "3 to 4 sentences: state the confirmed neighbourhood, the data anchor used, the adjustments made, and the final estimate rationale."
 }`;
 }
 
@@ -786,6 +876,10 @@ async function submitForm() {
   if (!email || !email.includes('@')) { alert('Please enter a valid email address.'); return; }
   if (!phone) { alert('Please enter your phone number.'); return; }
   if (!address || !city) { alert('Please enter your property address and city.'); return; }
+  if (!document.getElementById('consent-email').checked) {
+    alert('Please agree to the Terms and Consent to unlock your valuation report.');
+    return;
+  }
 
   const data = collectData();
 
@@ -915,7 +1009,9 @@ function revealResults() {
   const { valuation: p, data, email, phone, fname } = window._pending;
   const cityVal = data.city || 'Burlington';
 
-  document.getElementById('res-address').textContent = [data.address, data.city, 'ON'].filter(Boolean).join(', ');
+  const neighbourhood = p.confirmedNeighbourhood || '';
+  const addrParts = [data.address, neighbourhood ? neighbourhood + ',' : '', data.city, 'ON'].filter(Boolean);
+  document.getElementById('res-address').textContent = addrParts.join(' ').replace(' ,', ',');
   document.getElementById('res-name').textContent = fname + "'s Property Valuation";
   document.getElementById('res-likely-num').textContent = (p.likelyNum || (p.likelyValue || '').replace('$', '')) || '-';
   document.getElementById('res-low').textContent = p.lowValue || '';
