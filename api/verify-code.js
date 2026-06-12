@@ -4,10 +4,10 @@
 // 3. Creates lead in Follow Up Boss via /v1/events
 //
 // Required env vars:
-//   TOKEN_SECRET         — same value as in send-code.js
-//   SENDGRID_API_KEY     — SendGrid API key
-//   FROM_EMAIL           — verified sender (bernard@arzadonrealty.com)
-//   FOLLOWUPBOSS_API_KEY — Follow Up Boss API key (Admin -> API)
+//   TOKEN_SECRET         - same value as in send-code.js
+//   SENDGRID_API_KEY     - SendGrid API key
+//   FROM_EMAIL           - verified sender (bernard@arzadonrealty.com)
+//   FOLLOWUPBOSS_API_KEY - Follow Up Boss API key (Admin -> API)
 
 const crypto = require('crypto');
 
@@ -32,7 +32,7 @@ function verifyToken(email, code, token) {
   return { valid: true };
 }
 
-async function sendEmail(to, subject, html, fromName = 'Bernard Arzadon — Arzadon Realty') {
+async function sendEmail(to, subject, html, fromName = 'Bernard Arzadon, Arzadon Realty') {
   await fetch('https://api.sendgrid.com/v3/mail/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}` },
@@ -137,7 +137,7 @@ function bernardNotificationEmail(data) {
 
     <tr><td style="background:#1B2A4A;padding:24px 32px;border-bottom:3px solid #C9A84C;">
       <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;margin:0 0 4px;font-weight:700;">New Lead Alert</p>
-      <h2 style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:#FFFFFF;margin:0;">${fullName} — Home Evaluation</h2>
+      <h2 style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:#FFFFFF;margin:0;">${fullName} - Home Evaluation</h2>
     </td></tr>
 
     <!-- Contact info -->
@@ -173,8 +173,8 @@ function bernardNotificationEmail(data) {
     <!-- Valuation -->
     <tr><td style="background:#1B2A4A;padding:24px 32px;border-top:none;">
       <p style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;margin:0 0 10px;font-weight:700;">AI Estimate Shown to Lead</p>
-      <p style="font-family:Georgia,serif;font-size:40px;font-weight:700;color:#FFFFFF;margin:0 0 4px;line-height:1;">${v.likelyValue || '—'}</p>
-      <p style="font-size:13px;color:rgba(255,255,255,.5);margin:0;">Range: ${v.lowValue || '—'} to ${v.highValue || '—'}</p>
+      <p style="font-family:Georgia,serif;font-size:40px;font-weight:700;color:#FFFFFF;margin:0 0 4px;line-height:1;">${v.likelyValue || '-'}</p>
+      <p style="font-size:13px;color:rgba(255,255,255,.5);margin:0;">Range: ${v.lowValue || ''} to ${v.highValue || ''}</p>
       ${v.hpiBenchmark ? `<p style="font-size:12px;color:rgba(201,168,76,.7);margin:10px 0 0;">${v.hpiBenchmark}</p>` : ''}
     </td></tr>
 
@@ -195,7 +195,7 @@ async function addToFollowUpBoss(data) {
   const message = `Home evaluation submitted via eval.arzadonrealty.com.
 Property: ${locationStr}
 Type: ${propType || 'Not specified'}
-AI Estimate: ${v.likelyValue || 'See report'} (range: ${v.lowValue || '—'} to ${v.highValue || '—'})
+AI Estimate: ${v.likelyValue || 'See report'} (range: ${v.lowValue || ''} to ${v.highValue || ''})
 ${v.hpiBenchmark ? 'Data source: ' + v.hpiBenchmark : ''}`;
 
   const payload = {
@@ -244,27 +244,27 @@ module.exports = async (req, res) => {
   const result = verifyToken(email, code, token);
   if (!result.valid) return res.status(400).json({ error: result.error });
 
-  // Fire all three post-verify actions in parallel (non-blocking on failure)
+  // Fire all three post-verify actions in parallel
   if (leadData) {
-    Promise.all([
+    await Promise.all([
       // Email to client
       sendEmail(
         email,
-        `Your Home Valuation Report — ${leadData.address || leadData.city || 'Your Property'}`,
+        `Your Home Valuation Report - ${leadData.address || leadData.city || 'Your Property'}`,
         clientReportEmail(leadData)
       ).catch(e => console.error('Client email error:', e)),
 
       // Email to Bernard
       sendEmail(
         'bernard@arzadonrealty.com',
-        `New Lead: ${[leadData.fname, leadData.lname].filter(Boolean).join(' ')} — ${leadData.address || leadData.city}`,
+        `New Lead: ${[leadData.fname, leadData.lname].filter(Boolean).join(' ')} - ${leadData.address || leadData.city}`,
         bernardNotificationEmail(leadData),
         'Arzadon Realty Lead System'
       ).catch(e => console.error('Bernard email error:', e)),
 
       // Follow Up Boss
       addToFollowUpBoss(leadData).catch(e => console.error('FUB error:', e))
-    ]);
+    ]).catch(e => console.error('Post-verify error:', e));
   }
 
   return res.status(200).json({ success: true, verified: true });
