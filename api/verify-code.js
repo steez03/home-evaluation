@@ -194,9 +194,17 @@ async function addToFollowUpBoss(data) {
   const { fname, lname, email, phone, address, city, postalCode, propType, valuation: v } = data;
   const fullName = [fname, lname].filter(Boolean).join(' ');
   const locationStr = [address, city, postalCode, 'Ontario'].filter(Boolean).join(', ');
+  const neighbourhood = v.confirmedNeighbourhood || '';
+  const cityTag = city ? city.trim() : '';
+  const tags = ['AI Home Eval', 'Seller'];
+  if (cityTag) tags.push(cityTag);
+  if (neighbourhood) tags.push(neighbourhood);
+  if (data.timeline && data.timeline !== 'not specified') tags.push(data.timeline);
+
   const message = `Home evaluation submitted via eval.arzadonrealty.com.
 Property: ${locationStr}
 Type: ${propType || 'Not specified'}
+Selling Timeline: ${data.timeline || 'Not specified'}
 AI Estimate: ${v.likelyValue || 'See report'} (range: ${v.lowValue || ''} to ${v.highValue || ''})
 ${v.hpiBenchmark ? 'Data source: ' + v.hpiBenchmark : ''}
 Email/text consent: ${data.consentEmail ? 'YES - agreed to follow-up communications' : 'NO'}
@@ -207,6 +215,7 @@ Phone call consent (DNCL override): ${data.consentCall ? 'YES - consented to cal
     system: 'Arzadon Home Evaluator',
     type: 'Seller Inquiry',
     message,
+    tags,
     person: {
       name: fullName,
       emails: [{ value: email }],
@@ -214,7 +223,8 @@ Phone call consent (DNCL override): ${data.consentCall ? 'YES - consented to cal
       address: address || undefined,
       city: city || undefined,
       state: 'Ontario',
-      country: 'Canada'
+      country: 'Canada',
+      tags
     }
   };
 
