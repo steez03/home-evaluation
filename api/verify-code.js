@@ -252,11 +252,16 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { email, code, token, leadData } = req.body || {};
-  if (!email || !code || !token) return res.status(400).json({ error: 'Email, code, and token are required.' });
+  const { email, code, token, leadData, skipVerification } = req.body || {};
 
-  const result = verifyToken(email, code, token);
-  if (!result.valid) return res.status(400).json({ error: result.error });
+  if (!email) return res.status(400).json({ error: 'Email is required.' });
+
+  // If skipVerification flag is set, this is a second call just to fire FUB + emails
+  if (!skipVerification) {
+    if (!code || !token) return res.status(400).json({ error: 'Email, code, and token are required.' });
+    const result = verifyToken(email, code, token);
+    if (!result.valid) return res.status(400).json({ error: result.error });
+  }
 
   // Fire all three post-verify actions in parallel
   if (leadData) {
