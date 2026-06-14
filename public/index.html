@@ -201,6 +201,26 @@ textarea{resize:vertical;min-height:80px;}
 .hpi-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-secondary);font-weight:700;margin-bottom:3px;}
 .hpi-text{font-size:13px;color:var(--text-primary);line-height:1.6;font-weight:500;}
 
+/* CTA CARD */
+.cta-card{background:linear-gradient(135deg,var(--navy-deep),var(--navy));border-radius:16px;padding:22px 26px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+.cta-card-text p:first-child{font-size:12px;color:rgba(255,255,255,.45);margin-bottom:4px;line-height:1.5;}
+.cta-card-text p:last-child{font-size:15px;font-weight:600;color:var(--white);line-height:1.4;}
+.cta-card-text p:last-child span{background:linear-gradient(90deg,var(--gold-light),var(--gold-dark));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.cta-card-btn{flex-shrink:0;padding:11px 22px;background:linear-gradient(135deg,var(--gold-light),var(--gold-dark));border:none;font-family:'Nunito Sans',sans-serif;font-size:12px;font-weight:700;color:var(--navy-deep);cursor:pointer;letter-spacing:.8px;text-transform:uppercase;border-radius:10px;white-space:nowrap;text-decoration:none;display:inline-block;}
+
+/* GENERATING SCREEN */
+#generating-screen{display:none;animation:fadeUp .4s ease forwards;}
+.generating-card{background:var(--white);border-radius:20px;box-shadow:0 4px 32px rgba(27,42,74,.1);max-width:480px;margin:0 auto;padding:48px 36px;text-align:center;}
+.generating-ring{width:56px;height:56px;margin:0 auto 24px;border:3px solid var(--gray-200);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.generating-card h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--navy);margin-bottom:8px;}
+.generating-card p{font-size:14px;color:var(--text-secondary);margin-bottom:28px;line-height:1.6;}
+.gen-steps{display:flex;flex-direction:column;gap:8px;text-align:left;}
+.gen-step{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--off-white);border-radius:10px;font-size:13px;color:var(--text-secondary);opacity:0;transition:opacity .5s;font-weight:500;}
+.gen-step.visible{opacity:1;}
+.gen-step-dot{width:8px;height:8px;border-radius:50%;background:var(--gray-200);flex-shrink:0;transition:background .3s;}
+.gen-step.done .gen-step-dot{background:var(--gold);}
+
 .report-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
 .report-card{background:var(--white);border-radius:16px;box-shadow:0 2px 16px rgba(27,42,74,.06);padding:22px;}
 .report-card-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-secondary);margin-bottom:10px;font-weight:700;display:flex;align-items:center;gap:8px;}
@@ -548,6 +568,21 @@ footer{background:var(--white);border-top:1px solid var(--gray-200);padding:32px
     </div>
   </div>
 
+  <!-- GENERATING SCREEN (shown after verify if report still running) -->
+  <div id="generating-screen">
+    <div class="generating-card">
+      <div class="generating-ring"></div>
+      <h2>Analysing your property</h2>
+      <p>Your verified report is being generated. This usually takes about 20 seconds.</p>
+      <div class="gen-steps">
+        <div class="gen-step" id="gs-1"><div class="gen-step-dot"></div>Searching live market data</div>
+        <div class="gen-step" id="gs-2"><div class="gen-step-dot"></div>Confirming your neighbourhood</div>
+        <div class="gen-step" id="gs-3"><div class="gen-step-dot"></div>Applying condition and size adjustments</div>
+        <div class="gen-step" id="gs-4"><div class="gen-step-dot"></div>Writing your personalised report</div>
+      </div>
+    </div>
+  </div>
+
   <!-- RESULTS -->
   <div id="results-screen">
     <div class="results-hero">
@@ -571,6 +606,15 @@ footer{background:var(--white);border-top:1px solid var(--gray-200);padding:32px
         <span class="value-bar-center">Most Likely</span>
         <span id="bar-high"></span>
       </div>
+    </div>
+
+    <!-- CTA card -- placed right after value for maximum emotional impact -->
+    <div class="cta-card">
+      <div class="cta-card-text">
+        <p>AI estimates are a great starting point, but every home has details that data alone cannot capture.</p>
+        <p><span>Curious what yours could actually sell for?</span> Bernard Arzadon offers a free, no-obligation walkthrough for homeowners in the area.</p>
+      </div>
+      <a class="cta-card-btn" id="cta-email-link" href="#">Request a Walkthrough</a>
     </div>
 
     <div class="report-grid">
@@ -604,6 +648,7 @@ footer{background:var(--white);border-top:1px solid var(--gray-200);padding:32px
 </footer>
 
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBKULxXSx58j-KWPf2WKSgq4pbxJDh2gnY&libraries=places&callback=initPlaces" async defer></script>
+
 
 <script>
 // ── SQFT RANGES BY PROPERTY TYPE ──
@@ -966,9 +1011,7 @@ async function submitForm() {
     setupCodeInputs();
     startResendCountdown();
 
-    const verifyBtn = document.getElementById('verify-btn');
-    verifyBtn.disabled = true;
-    verifyBtn.textContent = 'Preparing your report...';
+    // Button stays enabled once 6 digits entered -- no waiting message needed
 
     // Valuation runs in background while user retrieves their code
     fetch('/api/valuation', {
@@ -980,14 +1023,8 @@ async function submitForm() {
       } else {
         window._pending.valuation = valuationRes.valuation;
       }
-      const inputs = Array.from({ length: 6 }, (_, i) => document.getElementById('c' + i));
-      verifyBtn.textContent = 'Unlock My Valuation';
-      verifyBtn.disabled = !inputs.every(inp => inp.value.length === 1);
     }).catch(err => {
       window._pending.valuationError = err.message;
-      verifyBtn.textContent = 'Unlock My Valuation';
-      const inputs = Array.from({ length: 6 }, (_, i) => document.getElementById('c' + i));
-      verifyBtn.disabled = !inputs.every(inp => inp.value.length === 1);
     });
 
   } catch (err) {
@@ -1030,16 +1067,27 @@ function setupCodeInputs() {
 function checkCodeComplete(inputs) {
   const btn = document.getElementById('verify-btn');
   const allFilled = inputs.every(i => i.value.length === 1);
-  // Only enable if valuation is ready or errored (not still "Preparing")
-  if (allFilled && btn.textContent !== 'Preparing your report...') {
-    btn.disabled = false;
-  } else if (!allFilled) {
-    btn.disabled = true;
+  // Always enable once 6 digits are entered -- report generates in background
+  btn.disabled = !allFilled;
+  if (allFilled && btn.textContent === 'Preparing your report...') {
+    btn.textContent = 'Unlock My Valuation';
   }
 }
 
 function getEnteredCode() {
   return Array.from({ length: 6 }, (_, i) => document.getElementById('c' + i).value).join('');
+}
+
+// ── GENERATING ANIMATION ──
+async function runGeneratingAnimation() {
+  const delays = [0, 1500, 3000, 5000];
+  for (let i = 0; i < 4; i++) {
+    await new Promise(r => setTimeout(r, delays[i]));
+    const el = document.getElementById('gs-' + (i+1));
+    if (el) el.classList.add('visible');
+    await new Promise(r => setTimeout(r, 600));
+    if (el) el.classList.add('done');
+  }
 }
 
 // ── VERIFY ──
@@ -1048,51 +1096,80 @@ async function verifyCode() {
   const { email, token } = window._pending;
   const btn = document.getElementById('verify-btn');
   const errEl = document.getElementById('verify-error');
-  btn.disabled = true; errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Verifying...'; errEl.style.display = 'none';
 
-  // Wait if valuation still running (edge case -- very fast typer)
-  if (!window._pending.valuation && !window._pending.valuationError) {
-    btn.textContent = 'Almost ready...';
-    let waited = 0;
-    while (!window._pending.valuation && !window._pending.valuationError && waited < 30000) {
-      await new Promise(r => setTimeout(r, 500));
-      waited += 500;
-    }
-  }
-
-  if (window._pending.valuationError) {
-    errEl.textContent = 'There was a problem generating your report. Please try again.';
-    errEl.style.display = 'block';
-    btn.textContent = 'Unlock My Valuation'; btn.disabled = false; return;
-  }
-
-  btn.textContent = 'Verifying...';
   try {
-    const { data, valuation } = window._pending;
-    const leadData = {
-      ...data, valuation,
-      email: window._pending.email,
-      phone: window._pending.phone,
-      fname: window._pending.fname,
-      lname: document.getElementById('lname').value.trim()
-    };
+    // Verify the code first -- this is fast
     const res = await fetch('/api/verify-code', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, code, token, leadData })
+      body: JSON.stringify({ email, code, token, leadData: null })
     });
     const result = await res.json();
+
     if (!result.success) {
       Array.from({ length: 6 }, (_, i) => document.getElementById('c' + i)).forEach(i => i.classList.add('error'));
       errEl.textContent = result.error || 'Incorrect code. Please try again.';
       errEl.style.display = 'block';
       btn.textContent = 'Unlock My Valuation'; btn.disabled = false; return;
     }
+
+    // Code verified -- if report is ready, show it immediately
+    if (window._pending.valuation) {
+      document.getElementById('verify-screen').style.display = 'none';
+      sendLeadData(); // fire FUB + emails in background
+      revealResults();
+      return;
+    }
+
+    // Report still generating -- show the generating screen
     document.getElementById('verify-screen').style.display = 'none';
+    document.getElementById('generating-screen').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    runGeneratingAnimation();
+
+    // Poll until valuation is ready
+    let waited = 0;
+    while (!window._pending.valuation && !window._pending.valuationError && waited < 60000) {
+      await new Promise(r => setTimeout(r, 800));
+      waited += 800;
+    }
+
+    document.getElementById('generating-screen').style.display = 'none';
+
+    if (window._pending.valuationError) {
+      alert('There was a problem generating your report. Please try submitting again.');
+      document.getElementById('hero-section').style.display = '';
+      document.getElementById('progress-wrap').style.display = '';
+      document.getElementById('screen-4').classList.add('active');
+      return;
+    }
+
+    sendLeadData(); // fire FUB + emails in background
     revealResults();
+
   } catch {
     errEl.textContent = 'Verification failed. Please try again.';
     errEl.style.display = 'block';
     btn.textContent = 'Unlock My Valuation'; btn.disabled = false;
+  }
+}
+
+// ── SEND LEAD DATA (FUB + emails, runs after verification) ──
+async function sendLeadData() {
+  try {
+    const { data, valuation, email, phone, fname } = window._pending;
+    const leadData = {
+      ...data, valuation,
+      email, phone, fname,
+      lname: document.getElementById('lname')?.value?.trim() || ''
+    };
+    // Re-call verify endpoint with leadData to trigger FUB + emails
+    await fetch('/api/verify-code', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code: 'VERIFIED', token: 'ALREADY_VERIFIED', leadData, skipVerification: true })
+    });
+  } catch (err) {
+    console.error('Lead data send error:', err);
   }
 }
 
@@ -1118,6 +1195,27 @@ function revealResults() {
     document.getElementById('res-hpi').textContent = p.hpiBenchmark;
     document.getElementById('hpi-banner').style.display = 'block';
   }
+
+  // Set CTA email link with pre-populated subject and body
+  const ctaLink = document.getElementById('cta-email-link');
+  if (ctaLink) {
+    const subject = encodeURIComponent("I'd like a home valuation for " + (data.address || 'my property'));
+    const body = encodeURIComponent(
+      'Hi Bernard,
+
+I just received my AI home valuation for ' +
+      [data.address, data.city].filter(Boolean).join(', ') +
+      ' and I would like to get a more accurate, in-person assessment.
+
+Please get in touch at your earliest convenience.
+
+Thanks,
+' +
+      (fname || '')
+    );
+    ctaLink.href = 'mailto:bernard@arzadonrealty.com?subject=' + subject + '&body=' + body;
+  }
+
   document.getElementById('results-screen').style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
