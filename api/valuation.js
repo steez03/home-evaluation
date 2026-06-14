@@ -1,4 +1,4 @@
-// api/valuation.js — Secure Anthropic API proxy with agentic web search loop
+// api/valuation.js - Secure Anthropic API proxy with agentic web search loop
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
