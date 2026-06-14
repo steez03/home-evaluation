@@ -1219,20 +1219,9 @@ function revealResults() {
   const ctaLink = document.getElementById('cta-email-link');
   if (ctaLink) {
     const subject = encodeURIComponent("I'd like a home valuation for " + (data.address || 'my property'));
-    const body = encodeURIComponent(
-      'Hi Bernard,
-
-I just received my AI home valuation for ' +
-      [data.address, data.city].filter(Boolean).join(', ') +
-      ' and I would like to get a more accurate, in-person assessment.
-
-Please get in touch at your earliest convenience.
-
-Thanks,
-' +
-      (fname || '')
-    );
-    ctaLink.href = 'mailto:bernard@arzadonrealty.com?subject=' + subject + '&body=' + body;
+    const propertyStr = [data.address, data.city].filter(Boolean).join(', ');
+    const bodyText = 'Hi Bernard,\n\nI just received my AI home valuation for ' + propertyStr + ' and I would like to get a more accurate, in-person assessment.\n\nPlease get in touch at your earliest convenience.\n\nThanks,\n' + (fname || '');
+    ctaLink.href = 'mailto:bernard@arzadonrealty.com?subject=' + subject + '&body=' + encodeURIComponent(bodyText);
   }
 
   document.getElementById('results-screen').style.display = 'block';
