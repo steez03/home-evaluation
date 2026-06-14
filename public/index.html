@@ -857,9 +857,9 @@ function getMarketConfig(cityVal) {
   const c = cityVal.toLowerCase().trim();
   if (c.includes('burlington')) return {
     board:'Cornerstone Association of REALTORS (Hamilton-Burlington)',
-    boardSearch:'creastats.crea.ca/board/hami Burlington detached average sold 2026',
+    boardSearch:'site:wowa.ca Burlington Ontario housing market 2026 detached average sold price',
     neighbourhoodSearch:'[NEIGHBOURHOOD] Burlington Ontario average sold price 2026 site:zolo.ca OR site:wowa.ca OR site:zoocasa.com',
-    warning:'CRITICAL: Do NOT use the board composite (~$737K) for Burlington. Burlington detached homes trade 30-50% above that composite. Search Burlington-specific and neighbourhood-specific data only.',
+    warning:'CRITICAL: Do NOT use the board composite (~$737K) for Burlington. Burlington detached homes trade 30-50% above that composite. Search Burlington-specific and neighbourhood-specific data only. When using WOWA data, always check the date on the page and use the MOST RECENT month available -- do not use January data if more recent months are available. Prefer data from the last 1-3 months.',
     anchors:`Burlington neighbourhood price tiers (fallback anchors):
 - PREMIUM: Roseland, Shoreacres, Elizabeth Gardens, lakefront detached $1.3M to $2.5M+
 - UPPER-MID: Alton Village, Millcroft, Orchard, Tyandaga, Palmer detached $1.0M to $1.5M
@@ -969,6 +969,7 @@ STEP 2 - FIND SOLD DATA (approved sources only):
 Primary: "${mkt.boardSearch}"
 Neighbourhood (replace [NEIGHBOURHOOD] with confirmed name): "${mkt.neighbourhoodSearch}"
 Prefer neighbourhood-level over city-wide data.
+RECENCY RULE: Always use the most recent data available. If a source shows multiple months, use the latest month, not January or an older month. Check the date on any page you reference and explicitly state the month and year of the data you are using.
 
 FALLBACK ANCHORS:
 ${mkt.anchors}
@@ -1348,7 +1349,7 @@ async function sendWalkthroughRequest() {
       document.getElementById('modal-success-content').style.display = 'block';
       setTimeout(closeModal, 3000);
     } else {
-      alert('Something went wrong. Please try again.');
+      alert('Something went wrong sending your request. Please email bernard@arzadonrealty.com directly.');
       btn.disabled = false;
       btn.textContent = 'Send Request';
     }
