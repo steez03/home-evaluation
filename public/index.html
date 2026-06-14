@@ -647,7 +647,7 @@ footer{background:var(--white);border-top:1px solid var(--gray-200);padding:32px
   <div class="footer-brokerage">eXp Realty, Brokerage · Ontario, Canada</div>
 </footer>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBKULxXSx58j-KWPf2WKSgq4pbxJDh2gnY&libraries=places" defer></script>
+<!-- Google Places loaded inline via dynamic script injection -->
 
 <script>
 // ── SQFT RANGES BY PROPERTY TYPE ──
@@ -675,42 +675,45 @@ function setProgress(step) {
 }
 
 // ── GOOGLE PLACES ──
-function initPlaces() {
+// Dynamic script injection -- most reliable cross-browser approach
+const GOOGLE_PLACES_KEY = 'YOUR_GOOGLE_PLACES_KEY';
+
+window.initPlaces = function() {
   const input = document.getElementById('address-input');
-  if (!input) return; // element not ready yet
-  if (typeof google === 'undefined' || !google.maps || !google.maps.places) return;
-  const ac = new google.maps.places.Autocomplete(input, {
-    componentRestrictions: { country: 'ca' },
-    fields: ['address_components', 'formatted_address'],
-    types: ['address']
-  });
-  ac.addListener('place_changed', () => {
-    const place = ac.getPlace();
-    if (!place.address_components) return;
-    let city = '', postal = '';
-    for (const comp of place.address_components) {
-      if (comp.types.includes('locality')) city = comp.long_name;
-      if (comp.types.includes('postal_code')) postal = comp.long_name;
-    }
-    if (city) document.getElementById('city-input').value = city;
-    if (postal) document.getElementById('postal-input').value = postal;
-  });
-}
-
-// Initialise Places when both DOM and Google Maps are ready
-function tryInitPlaces() {
-  if (typeof google !== 'undefined' && google.maps && google.maps.places) {
-    initPlaces();
-  } else {
-    setTimeout(tryInitPlaces, 100);
+  if (!input) return;
+  try {
+    const ac = new google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: 'ca' },
+      fields: ['address_components', 'formatted_address'],
+      types: ['address']
+    });
+    ac.addListener('place_changed', () => {
+      const place = ac.getPlace();
+      if (!place.address_components) return;
+      let city = '', postal = '';
+      for (const comp of place.address_components) {
+        if (comp.types.includes('locality')) city = comp.long_name;
+        if (comp.types.includes('postal_code')) postal = comp.long_name;
+      }
+      if (city) document.getElementById('city-input').value = city;
+      if (postal) document.getElementById('postal-input').value = postal;
+    });
+    console.log('Google Places autocomplete initialised');
+  } catch(e) {
+    console.error('Places init error:', e);
   }
-}
+};
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', tryInitPlaces);
-} else {
-  tryInitPlaces();
-}
+// Inject Google Maps script dynamically after page loads
+window.addEventListener('load', function() {
+  const script = document.createElement('script');
+  script.src = 'https://maps.googleapis.com/maps/api/js?key=' + AIzaSyBKULxXSx58j-KWPf2WKSgq4pbxJDh2gnY + '&libraries=places&callback=initPlaces';
+  script.async = true;
+  script.onerror = function() {
+    console.error('Google Maps script failed to load. Check your API key and domain restrictions.');
+  };
+  document.head.appendChild(script);
+});
 
 // ── NAVIGATION ──
 let currentScreen = 1;
