@@ -676,7 +676,7 @@ function setProgress(step) {
 
 // ── GOOGLE PLACES ──
 // Dynamic script injection -- most reliable cross-browser approach
-const GOOGLE_PLACES_KEY = 'YOUR_GOOGLE_PLACES_KEY';
+const GOOGLE_PLACES_KEY = 'AIzaSyBKULxXSx58j-KWPf2WKSgq4pbxJDh2gnY';
 
 window.initPlaces = function() {
   const input = document.getElementById('address-input');
@@ -707,7 +707,7 @@ window.initPlaces = function() {
 // Inject Google Maps script dynamically after page loads
 window.addEventListener('load', function() {
   const script = document.createElement('script');
-  script.src = 'https://maps.googleapis.com/maps/api/js?key=' + AIzaSyBKULxXSx58j-KWPf2WKSgq4pbxJDh2gnY + '&libraries=places&callback=initPlaces';
+  script.src = 'https://maps.googleapis.com/maps/api/js?key=' + GOOGLE_PLACES_KEY + '&libraries=places&callback=initPlaces';
   script.async = true;
   script.onerror = function() {
     console.error('Google Maps script failed to load. Check your API key and domain restrictions.');
